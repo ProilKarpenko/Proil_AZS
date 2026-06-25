@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Карта · MapLibre GL</title>
+  <title>Карта доступности АЗС Proil</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -256,18 +256,18 @@
         right: 8px;
         left: 8px;
         padding: 0.7rem 0.9rem 0.9rem;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         border-radius: 14px;
       }
       .legend-popup-title {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
       }
       .legend-dot {
         width: 14px;
         height: 14px;
       }
       .legend-label {
-        font-size: 0.9rem;
+        font-size: 0.75rem;
       }
       .maplibregl-popup-content {
         padding: 0.5rem 0.6rem 0.4rem;
@@ -275,13 +275,13 @@
         border-radius: 10px;
       }
       .maplibregl-popup-content .popup-desc {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
       }
       .maplibregl-popup-content .popup-label {
-        font-size: 0.9rem;
+        font-size: 0.75rem;
       }
       .maplibregl-popup-content .popup-datetime {
-        font-size: 0.9rem;
+        font-size: 0.65rem;
       }
     }
 
@@ -359,6 +359,8 @@
 
 <script>
   (function() {
+    const DROPBOX_FILE_URL = 'https://www.dropbox.com/scl/fi/1km7ujjex2m8z0wvfqy34/data.xlsx?rlkey=3fne8y0sfmk6iv36rb1zs4kyz&st=ecovq8ep&dl=0';
+
     const map = new maplibregl.Map({
       container: 'map',
       style: {
@@ -661,91 +663,80 @@
       }
     });
 
-    async function loadFromGitHub() {
+    async function loadFromDropbox(url) {
+      if (!url || url.trim() === '') {
+        return;
+      }
+
+      let downloadUrl = url.trim();
+
+      if (downloadUrl.includes('dropbox.com')) {
+        if (downloadUrl.includes('?dl=0') || !downloadUrl.includes('dl=')) {
+          downloadUrl = downloadUrl.replace('?dl=0', '?dl=1');
+          if (!downloadUrl.includes('dl=')) {
+            downloadUrl += (downloadUrl.includes('?') ? '&' : '?') + 'dl=1';
+          }
+        }
+        if (downloadUrl.includes('www.dropbox.com')) {
+          downloadUrl = downloadUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+        }
+        if (downloadUrl.includes('dropbox.com/s/')) {
+          downloadUrl = downloadUrl.replace('dropbox.com/s/', 'dl.dropboxusercontent.com/s/');
+        }
+      }
+
       try {
-        const response = await fetch(window.location.href);
+        const response = await fetch(downloadUrl);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
-        const htmlText = await response.text();
-        
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
-        
-        const dataScript = doc.getElementById('marker-data');
-        if (!dataScript) {
-          console.warn('Блок с данными не найден');
+        const arrayBuffer = await response.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(firstSheet);
+
+        if (!json || json.length === 0) {
           return;
         }
-        
-        const dataJson = dataScript.textContent.trim();
-        if (!dataJson) {
-          console.warn('Данные пустые');
-          return;
-        }
-        
-        const jsonData = JSON.parse(dataJson);
-        if (jsonData && Array.isArray(jsonData) && jsonData.length > 0) {
-          loadMarkersFromArray(jsonData);
-        }
+
+        loadMarkersFromArray(json);
+
       } catch (err) {
-        console.error('Ошибка загрузки данных из GitHub:', err);
+        console.error('Dropbox loading error:', err);
       }
     }
 
-    function loadSampleData() {
-      const sampleData = [
-        { Longitude: 37.6173, Latitude: 55.7558, Label: 'Москва', Description: 'Столица России', DateTime: '2025-06-24 12:00', 'marker-color': '#e74c3c' },
-        { Longitude: 30.3166, Latitude: 59.9343, Label: 'Санкт-Петербург', Description: 'Северная столица', DateTime: '2025-06-24 14:30', 'marker-color': '#3498db' },
-        { Longitude: 54.7351, Latitude: 55.0372, Label: 'Уфа', Description: 'Город на Белой', DateTime: '2025-06-23 09:15', 'marker-color': '#2ecc71' },
-        { Longitude: 82.9210, Latitude: 55.0302, Label: 'Новосибирск', Description: 'Научный центр', DateTime: '2025-06-22 16:45', 'marker-color': '#f1c40f' },
-        { Longitude: 39.7245, Latitude: 52.5871, Label: 'Липецк', Description: 'Промышленный', DateTime: '2025-06-21 11:20', 'marker-color': '#9b59b6' },
-        { Longitude: 30.2642, Latitude: 50.4501, Label: 'Киев', Description: 'Столица Украины', DateTime: '2025-06-20 08:00', 'marker-color': '#e67e22' },
-        { Longitude: 37.6188, Latitude: 55.7512, Label: 'Красная площадь', Description: 'Главная площадь', DateTime: '2025-06-19 18:30', 'marker-color': '#e74c3c' },
-        { Longitude: 39.1888, Latitude: 51.6608, Label: 'Воронеж', Description: 'Город-сад', DateTime: '2025-06-18 13:10', 'marker-color': '#1abc9c' }
-      ];
-      loadMarkersFromArray(sampleData);
-    }
-
     map.on('load', function() {
-      loadFromGitHub();
-      
+      if (DROPBOX_FILE_URL && DROPBOX_FILE_URL.trim() !== '') {
+        loadFromDropbox(DROPBOX_FILE_URL);
+      }
+
       setTimeout(function() {
         locateUser();
       }, 800);
     });
 
     if (map.loaded()) {
-      loadFromGitHub();
+      if (DROPBOX_FILE_URL && DROPBOX_FILE_URL.trim() !== '') {
+        loadFromDropbox(DROPBOX_FILE_URL);
+      }
       setTimeout(function() {
         locateUser();
       }, 800);
     } else {
       map.on('load', function() {
-        loadFromGitHub();
+        if (DROPBOX_FILE_URL && DROPBOX_FILE_URL.trim() !== '') {
+          loadFromDropbox(DROPBOX_FILE_URL);
+        }
         setTimeout(function() {
           locateUser();
         }, 800);
       });
     }
 
-    window.loadSampleData = loadSampleData;
-
   })();
 </script>
-
-<script id="marker-data" type="application/json">
-[
-  {"Longitude": 37.6173, "Latitude": 55.7558, "Label": "Москва", "Description": "Столица России", "DateTime": "2025-06-24 12:00", "marker-color": "#e74c3c"},
-  {"Longitude": 30.3166, "Latitude": 59.9343, "Label": "Санкт-Петербург", "Description": "Северная столица", "DateTime": "2025-06-24 14:30", "marker-color": "#3498db"},
-  {"Longitude": 54.7351, "Latitude": 55.0372, "Label": "Уфа", "Description": "Город на Белой", "DateTime": "2025-06-23 09:15", "marker-color": "#2ecc71"},
-  {"Longitude": 82.9210, "Latitude": 55.0302, "Label": "Новосибирск", "Description": "Научный центр", "DateTime": "2025-06-22 16:45", "marker-color": "#f1c40f"},
-  {"Longitude": 39.7245, "Latitude": 52.5871, "Label": "Липецк", "Description": "Промышленный", "DateTime": "2025-06-21 11:20", "marker-color": "#9b59b6"},
-  {"Longitude": 30.2642, "Latitude": 50.4501, "Label": "Киев", "Description": "Столица Украины", "DateTime": "2025-06-20 08:00", "marker-color": "#e67e22"},
-  {"Longitude": 37.6188, "Latitude": 55.7512, "Label": "Красная площадь", "Description": "Главная площадь", "DateTime": "2025-06-19 18:30", "marker-color": "#e74c3c"},
-  {"Longitude": 39.1888, "Latitude": 51.6608, "Label": "Воронеж", "Description": "Город-сад", "DateTime": "2025-06-18 13:10", "marker-color": "#1abc9c"}
-]
-</script>
-
 </body>
 </html>
