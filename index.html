@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Карта · MapLibre GL + GitHub</title>
+  <title>Карта доступности АЗС Proil</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -357,10 +356,9 @@
   </div>
 </div>
 
-
 <script>
   (function() {
-    const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/ProilKarpenko/Proil_AZS/refs/heads/main/data.xlsx';
+    const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/ProilKarpenko/Proil_AZS/refs/heads/main/data.csv';
 
     const map = new maplibregl.Map({
       container: 'map',
@@ -581,7 +579,28 @@
       bindPopup();
     }
 
-    function loadMarkersFromArray(dataArray) {
+    function parseCSV(csvText) {
+      const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+      if (lines.length === 0) return [];
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const result = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        const row = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index] || '';
+        });
+        result.push(row);
+      }
+
+      return result;
+    }
+
+    function loadMarkersFromCSV(csvText) {
+      const dataArray = parseCSV(csvText);
+
       if (!dataArray || dataArray.length === 0) {
         markersData = [];
         renderMarkers([]);
@@ -590,20 +609,14 @@
 
       const parsed = [];
       for (let row of dataArray) {
-        const keys = Object.keys(row);
-        const getVal = (name) => {
-          const found = keys.find(k => k.toLowerCase() === name.toLowerCase());
-          return found ? row[found] : undefined;
-        };
-
-        const lon = parseFloat(getVal('longitude'));
-        const lat = parseFloat(getVal('latitude'));
+        const lon = parseFloat(row.longitude);
+        const lat = parseFloat(row.latitude);
         if (isNaN(lon) || isNaN(lat)) continue;
 
-        const label = getVal('label') || 'Маркер';
-        const desc = getVal('description') || '';
-        const datetime = getVal('datetime') || '';
-        const color = getVal('marker-color') || '#3b82f6';
+        const label = row.label || 'Маркер';
+        const desc = row.description || '';
+        const datetime = row.datetime || '';
+        const color = row['marker-color'] || '#3b82f6';
 
         parsed.push({
           lon, lat,
@@ -675,20 +688,15 @@
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
-        const arrayBuffer = await response.arrayBuffer();
-        const data = new Uint8Array(arrayBuffer);
+        const csvText = await response.text();
 
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(firstSheet);
-
-        if (!json || json.length === 0) {
-          console.warn('Файл пуст или нет данных');
+        if (!csvText || csvText.trim() === '') {
+          console.warn('CSV файл пуст');
           return;
         }
 
-        loadMarkersFromArray(json);
-        console.log(`Загружено ${json.length} маркеров из GitHub`);
+        loadMarkersFromCSV(csvText);
+        console.log(`CSV файл загружен из GitHub`);
 
       } catch (err) {
         console.error('Ошибка загрузки из GitHub:', err);
