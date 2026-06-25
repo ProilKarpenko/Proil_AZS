@@ -113,7 +113,7 @@
     .legend-label {
       font-weight: 400;
       color: #2f405b;
-      font-size: 1rem;
+      font-size: 0.9rem;
     }
 
     .maplibregl-popup-content {
@@ -134,15 +134,17 @@
     .maplibregl-popup-content .popup-label {
       font-weight: 400;
       color: #000000;
-      font-size: 1rem;
+      font-size: 0.9rem;
+      opacity: 0.85;
     }
     .maplibregl-popup-content .popup-datetime {
-      font-size: 1rem;
+      font-size: 0.8rem;
       color: #000000;
       margin-top: 0.2rem;
+      opacity: 0.7;
     }
     .maplibregl-popup-close-button {
-      font-size: 1rem;
+      font-size: 1.2rem;
       color: #000000;
       opacity: 0.5;
     }
@@ -357,7 +359,7 @@
 
 <script>
   (function() {
-    const DROPBOX_FILE_URL = 'https://www.dropbox.com/scl/fi/1km7ujjex2m8z0wvfqy34/data.xlsx?rlkey=3fne8y0sfmk6iv36rb1zs4kyz&st=ecovq8ep&dl=0';
+    const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/ProilKarpenko/Proil_AZS/refs/heads/main/data.xlsx';
 
     const map = new maplibregl.Map({
       container: 'map',
@@ -661,30 +663,14 @@
       }
     });
 
-    async function loadFromDropbox(url) {
+    async function loadFromGitHub(url) {
       if (!url || url.trim() === '') {
+        console.warn('GitHub raw URL не указан');
         return;
       }
 
-      let downloadUrl = url.trim();
-
-      if (downloadUrl.includes('dropbox.com')) {
-        if (downloadUrl.includes('?dl=0') || !downloadUrl.includes('dl=')) {
-          downloadUrl = downloadUrl.replace('?dl=0', '?dl=1');
-          if (!downloadUrl.includes('dl=')) {
-            downloadUrl += (downloadUrl.includes('?') ? '&' : '?') + 'dl=1';
-          }
-        }
-        if (downloadUrl.includes('www.dropbox.com')) {
-          downloadUrl = downloadUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-        }
-        if (downloadUrl.includes('dropbox.com/s/')) {
-          downloadUrl = downloadUrl.replace('dropbox.com/s/', 'dl.dropboxusercontent.com/s/');
-        }
-      }
-
       try {
-        const response = await fetch(downloadUrl);
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -696,19 +682,21 @@
         const json = XLSX.utils.sheet_to_json(firstSheet);
 
         if (!json || json.length === 0) {
+          console.warn('Файл пуст или нет данных');
           return;
         }
 
         loadMarkersFromArray(json);
+        console.log(`Загружено ${json.length} маркеров из GitHub`);
 
       } catch (err) {
-        console.error('Dropbox loading error:', err);
+        console.error('Ошибка загрузки из GitHub:', err);
       }
     }
 
     map.on('load', function() {
-      if (DROPBOX_FILE_URL && DROPBOX_FILE_URL.trim() !== '') {
-        loadFromDropbox(DROPBOX_FILE_URL);
+      if (GITHUB_RAW_URL && GITHUB_RAW_URL.trim() !== '') {
+        loadFromGitHub(GITHUB_RAW_URL);
       }
 
       setTimeout(function() {
@@ -717,16 +705,16 @@
     });
 
     if (map.loaded()) {
-      if (DROPBOX_FILE_URL && DROPBOX_FILE_URL.trim() !== '') {
-        loadFromDropbox(DROPBOX_FILE_URL);
+      if (GITHUB_RAW_URL && GITHUB_RAW_URL.trim() !== '') {
+        loadFromGitHub(GITHUB_RAW_URL);
       }
       setTimeout(function() {
         locateUser();
       }, 800);
     } else {
       map.on('load', function() {
-        if (DROPBOX_FILE_URL && DROPBOX_FILE_URL.trim() !== '') {
-          loadFromDropbox(DROPBOX_FILE_URL);
+        if (GITHUB_RAW_URL && GITHUB_RAW_URL.trim() !== '') {
+          loadFromGitHub(GITHUB_RAW_URL);
         }
         setTimeout(function() {
           locateUser();
