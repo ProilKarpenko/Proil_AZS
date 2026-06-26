@@ -1,4 +1,4 @@
-"Longitude";"Latitude";"Description";"Label";"DateTime";"marker-color"
+Longitude;Latitude;Description;Label;DateTime;marker-color
 37.609263;55.906027;Ограничение 20 л;Газпромнефть;19.06.2026 00:00:00;#FFA500
 37.481558;55.880046;Нет топлива;Газпромнефть;20.06.2026 00:00:00;#0000FF
 37.424569;55.876152;Ограничение в 50 л;Татнефть;20.06.2026 00:00:00;#FFA500
