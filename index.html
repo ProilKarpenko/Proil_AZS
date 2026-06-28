@@ -335,6 +335,7 @@
   <button class="legend-toggle-btn" id="legendToggleBtn">i</button>
   <div class="legend-popup" id="legendPopup">
     <div class="legend-popup-title">Карта доступности</div>
+    <div id="legendItems">
       <div class="legend-item">
         <span class="legend-dot" style="background: #e74c3c;"></span>
         <span class="legend-label">Отказ в заправке</span>
@@ -350,10 +351,6 @@
       <div class="legend-item">
         <span class="legend-dot" style="background: #2ecc71;"></span>
         <span class="legend-label">Доступна к заправке</span>
-      </div>
-      <div class="legend-item" data-color="#1abc9c">
-        <span class="legend-dot" style="background: #1abc9c;"></span>
-        <span class="legend-label">Возможно появилось топливо</span>
       </div>
     </div>
   </div>
@@ -587,10 +584,12 @@
       if (lines.length === 0) return [];
 
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
       const result = [];
 
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim());
+        const values = lines[i].split(';').map(v => v.trim());
         const row = {};
         headers.forEach((header, index) => {
           row[header] = values[index] || '';
