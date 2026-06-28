@@ -736,7 +736,6 @@
       if (datetime) html += `<div class="popup-datetime">Последнее обновление: ${datetime}</div>`;
       html += `<div class="popup-coords" data-lon="${lon}" data-lat="${lat}">
         <span>${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
-        <span class="copy-icon">📋</span>
       </div>`;
       if (!html) html = '<div class="popup-label">Маркер</div>';
 
