@@ -155,24 +155,22 @@
       opacity: 0.7;
     }
     .maplibregl-popup-content .popup-coords {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: #000000;
-      margin-top: 0.3rem;
-      padding-top: 0.3rem;
-      border-top: 1px solid #e0e0e0;
-      opacity: 0.6;
+      margin-top: 0.2rem;
+      opacity: 0.7;
       cursor: pointer;
       transition: opacity 0.15s ease;
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      font-family: 'Courier New', monospace;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     .maplibregl-popup-content .popup-coords:hover {
       opacity: 1;
     }
     .maplibregl-popup-content .popup-coords .copy-icon {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       opacity: 0.5;
     }
     .maplibregl-popup-content .popup-coords.copied .copy-icon {
@@ -377,21 +375,21 @@
   <div id="map"></div>
   <button class="legend-toggle-btn" id="legendToggleBtn">i</button>
   <div class="legend-popup" id="legendPopup">
-    <div class="legend-popup-title">Карта доступности</div>
+    <div class="legend-popup-title">Доступность АЗС</div>
     <div id="legendItems">
-      <div class="legend-item">
+      <div class="legend-item" data-color="#e74c3c">
         <span class="legend-dot" style="background: #e74c3c;"></span>
         <span class="legend-label">Отказ в заправке</span>
       </div>
-      <div class="legend-item">
+      <div class="legend-item" data-color="#f1c40f">
         <span class="legend-dot" style="background: #f1c40f;"></span>
         <span class="legend-label">Ограничение по литрам</span>
       </div>
-      <div class="legend-item">
+      <div class="legend-item" data-color="#3498db">
         <span class="legend-dot" style="background: #3498db;"></span>
         <span class="legend-label">Нет топлива</span>
       </div>
-      <div class="legend-item">
+      <div class="legend-item" data-color="#2ecc71">
         <span class="legend-dot" style="background: #2ecc71;"></span>
         <span class="legend-label">Доступна к заправке</span>
       </div>
@@ -473,7 +471,7 @@
     });
 
     function applyVisibilityFilter() {
-      if (!map.getSource('markers')) return;
+      if (!map.getSource('markers') || allFeatures.length === 0) return;
       
       const filteredFeatures = allFeatures.filter(f => {
         const color = f.properties.color;
@@ -688,7 +686,6 @@
       const dataArray = parseCSV(csvText);
 
       if (!dataArray || dataArray.length === 0) {
-        markersData = [];
         renderMarkers([]);
         return;
       }
@@ -736,9 +733,9 @@
       let html = '';
       if (description) html += `<div class="popup-desc">${description}</div>`;
       if (label) html += `<div class="popup-label">${label}</div>`;
-      if (datetime) html += `<div class="popup-datetime">Информация предоставлена: ${datetime}</div>`;
+      if (datetime) html += `<div class="popup-datetime">Последнее обновление: ${datetime}</div>`;
       html += `<div class="popup-coords" data-lon="${lon}" data-lat="${lat}">
-        <span>📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+        <span>${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
         <span class="copy-icon">📋</span>
       </div>`;
       if (!html) html = '<div class="popup-label">Маркер</div>';
