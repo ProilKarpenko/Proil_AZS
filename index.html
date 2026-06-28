@@ -433,7 +433,7 @@
       maxZoom: 19,
     });
 
-    let markersData = [];
+    let allFeatures = [];
     let locationAttempted = false;
     let hiddenColors = new Set();
 
@@ -474,8 +474,7 @@
     function applyVisibilityFilter() {
       if (!map.getSource('markers')) return;
       
-      const features = map.getSource('markers')._data.features;
-      const filteredFeatures = features.filter(f => {
+      const filteredFeatures = allFeatures.filter(f => {
         const color = f.properties.color;
         return !hiddenColors.has(color);
       });
@@ -605,6 +604,7 @@
       clearMarkers();
 
       if (!data || data.length === 0) {
+        allFeatures = [];
         return;
       }
 
@@ -627,6 +627,8 @@
           }
         };
       });
+
+      allFeatures = features;
 
       const geojson = {
         type: 'FeatureCollection',
@@ -710,8 +712,7 @@
         });
       }
 
-      markersData = parsed;
-      renderMarkers(markersData);
+      renderMarkers(parsed);
     }
 
     const popup = new maplibregl.Popup({
