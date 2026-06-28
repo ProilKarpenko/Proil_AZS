@@ -406,7 +406,7 @@
   (function() {
     const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/ProilKarpenko/Proil_AZS/refs/heads/main/data.csv';
 
-    const map = new maplibregl.Map({
+     const map = new maplibregl.Map({
       container: 'map',
       style: {
         version: 8,
@@ -434,8 +434,8 @@
     });
 
     let allFeatures = [];
-    let locationAttempted = false;
     let hiddenColors = new Set();
+    let locationAttempted = false;
 
     const legendToggleBtn = document.getElementById('legendToggleBtn');
     const legendPopup = document.getElementById('legendPopup');
@@ -735,7 +735,7 @@
       let html = '';
       if (description) html += `<div class="popup-desc">${description}</div>`;
       if (label) html += `<div class="popup-label">${label}</div>`;
-      if (datetime) html += `<div class="popup-datetime">Последнее обновление: ${datetime}</div>`;
+      if (datetime) html += `<div class="popup-datetime">Информация предоставлена: ${datetime}</div>`;
       html += `<div class="popup-coords" data-lon="${lon}" data-lat="${lat}">
         <span>📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
         <span class="copy-icon">📋</span>
@@ -831,7 +831,7 @@
         }
 
         loadMarkersFromCSV(csvText);
-        console.log(`CSV файл загружен из GitHub`);
+        console.log('CSV файл загружен из GitHub');
 
       } catch (err) {
         console.error('Ошибка загрузки из GitHub:', err);
