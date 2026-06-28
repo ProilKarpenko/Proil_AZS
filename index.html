@@ -100,7 +100,7 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      padding: 0.4rem 0;
+      padding: 0.25rem 0;
     }
     .legend-dot {
       width: 20px;
@@ -187,7 +187,7 @@
         margin-bottom: 0.5rem;
       }
       .legend-item {
-        padding: 0.3rem 0;
+        padding: 0.2rem 0;
         gap: 0.5rem;
       }
       .legend-dot {
@@ -281,10 +281,6 @@
       }
       .maplibregl-popup-content .popup-datetime {
         font-size: 0.65rem;
-      }
-      .maplibregl-popup-close-button {
-        font-size: 1rem;
-        padding: 2px 4px;
       }
     }
 
@@ -394,6 +390,7 @@
       maxZoom: 19,
     });
 
+    let markersData = [];
     let locationAttempted = false;
 
     const legendToggleBtn = document.getElementById('legendToggleBtn');
@@ -608,6 +605,7 @@
       const dataArray = parseCSV(csvText);
 
       if (!dataArray || dataArray.length === 0) {
+        markersData = [];
         renderMarkers([]);
         return;
       }
@@ -632,7 +630,8 @@
         });
       }
 
-      renderMarkers(parsed);
+      markersData = parsed;
+      renderMarkers(markersData);
     }
 
     const popup = new maplibregl.Popup({
@@ -700,7 +699,7 @@
         }
 
         loadMarkersFromCSV(csvText);
-        console.log('CSV файл загружен из GitHub');
+        console.log(`CSV файл загружен из GitHub`);
 
       } catch (err) {
         console.error('Ошибка загрузки из GitHub:', err);
