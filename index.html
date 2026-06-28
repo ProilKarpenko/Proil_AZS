@@ -406,7 +406,7 @@
   (function() {
     const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/ProilKarpenko/Proil_AZS/refs/heads/main/data.csv';
 
-     const map = new maplibregl.Map({
+    const map = new maplibregl.Map({
       container: 'map',
       style: {
         version: 8,
@@ -436,6 +436,7 @@
     let allFeatures = [];
     let hiddenColors = new Set();
     let locationAttempted = false;
+    let markersLoaded = false;
 
     const legendToggleBtn = document.getElementById('legendToggleBtn');
     const legendPopup = document.getElementById('legendPopup');
@@ -472,7 +473,7 @@
     });
 
     function applyVisibilityFilter() {
-      if (!map.getSource('markers')) return;
+      if (!map.getSource('markers') || allFeatures.length === 0) return;
       
       const filteredFeatures = allFeatures.filter(f => {
         const color = f.properties.color;
@@ -660,6 +661,7 @@
         }
       });
 
+      markersLoaded = true;
       applyVisibilityFilter();
       bindPopup();
     }
@@ -687,7 +689,6 @@
       const dataArray = parseCSV(csvText);
 
       if (!dataArray || dataArray.length === 0) {
-        markersData = [];
         renderMarkers([]);
         return;
       }
@@ -735,7 +736,7 @@
       let html = '';
       if (description) html += `<div class="popup-desc">${description}</div>`;
       if (label) html += `<div class="popup-label">${label}</div>`;
-      if (datetime) html += `<div class="popup-datetime">Информация предоставлена: ${datetime}</div>`;
+      if (datetime) html += `<div class="popup-datetime">Последнее обновление: ${datetime}</div>`;
       html += `<div class="popup-coords" data-lon="${lon}" data-lat="${lat}">
         <span>📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
         <span class="copy-icon">📋</span>
