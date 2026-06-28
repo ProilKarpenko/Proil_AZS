@@ -100,7 +100,17 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      padding: 0.25rem 0;
+      padding: 0.4rem 0;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.15s ease;
+      user-select: none;
+    }
+    .legend-item:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .legend-item.hidden {
+      opacity: 0.4;
     }
     .legend-dot {
       width: 20px;
@@ -108,11 +118,13 @@
       border-radius: 50%;
       border: 1px solid rgba(0, 0, 0, 0.08);
       flex-shrink: 0;
+      transition: all 0.15s ease;
     }
     .legend-label {
       font-weight: 400;
       color: #2f405b;
       font-size: 0.9rem;
+      transition: all 0.15s ease;
     }
 
     .maplibregl-popup-content {
@@ -121,7 +133,7 @@
       border-radius: 14px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
       background: #ffffff;
-      max-width: 280px;
+      max-width: 320px;
       border: 1px solid rgba(0, 0, 0, 0.06);
     }
     .maplibregl-popup-content .popup-desc {
@@ -141,6 +153,31 @@
       color: #000000;
       margin-top: 0.2rem;
       opacity: 0.7;
+    }
+    .maplibregl-popup-content .popup-coords {
+      font-size: 0.75rem;
+      color: #000000;
+      margin-top: 0.3rem;
+      padding-top: 0.3rem;
+      border-top: 1px solid #e0e0e0;
+      opacity: 0.6;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Courier New', monospace;
+    }
+    .maplibregl-popup-content .popup-coords:hover {
+      opacity: 1;
+    }
+    .maplibregl-popup-content .popup-coords .copy-icon {
+      font-size: 0.9rem;
+      opacity: 0.5;
+    }
+    .maplibregl-popup-content .popup-coords.copied .copy-icon {
+      opacity: 1;
+      color: #2ecc71;
     }
     .maplibregl-popup-close-button {
       font-size: 1.2rem;
@@ -187,7 +224,7 @@
         margin-bottom: 0.5rem;
       }
       .legend-item {
-        padding: 0.2rem 0;
+        padding: 0.3rem 0;
         gap: 0.5rem;
       }
       .legend-dot {
@@ -199,7 +236,7 @@
       }
       .maplibregl-popup-content {
         padding: 0.6rem 0.8rem 0.5rem;
-        max-width: 220px;
+        max-width: 240px;
         border-radius: 12px;
       }
       .maplibregl-popup-content .popup-desc {
@@ -209,6 +246,9 @@
         font-size: 0.8rem;
       }
       .maplibregl-popup-content .popup-datetime {
+        font-size: 0.7rem;
+      }
+      .maplibregl-popup-content .popup-coords {
         font-size: 0.7rem;
       }
       .maplibregl-popup-close-button {
@@ -270,7 +310,7 @@
       }
       .maplibregl-popup-content {
         padding: 0.5rem 0.6rem 0.4rem;
-        max-width: 180px;
+        max-width: 200px;
         border-radius: 10px;
       }
       .maplibregl-popup-content .popup-desc {
@@ -280,6 +320,9 @@
         font-size: 0.75rem;
       }
       .maplibregl-popup-content .popup-datetime {
+        font-size: 0.65rem;
+      }
+      .maplibregl-popup-content .popup-coords {
         font-size: 0.65rem;
       }
     }
@@ -306,7 +349,7 @@
         overflow-y: auto;
       }
       .maplibregl-popup-content {
-        max-width: 200px;
+        max-width: 220px;
       }
     }
 
@@ -352,6 +395,10 @@
         <span class="legend-dot" style="background: #2ecc71;"></span>
         <span class="legend-label">Доступна к заправке</span>
       </div>
+      <div class="legend-item" data-color="#1abc9c">
+        <span class="legend-dot" style="background: #1abc9c;"></span>
+        <span class="legend-label">Возможно появилось топливо</span>
+      </div>
     </div>
   </div>
 </div>
@@ -387,11 +434,13 @@
       maxZoom: 19,
     });
 
-    let markersData = [];
+    let allFeatures = [];
+    let hiddenColors = new Set();
     let locationAttempted = false;
 
     const legendToggleBtn = document.getElementById('legendToggleBtn');
     const legendPopup = document.getElementById('legendPopup');
+    const legendItems = document.querySelectorAll('.legend-item');
 
     legendToggleBtn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -407,6 +456,37 @@
         }
       }
     });
+
+    legendItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const color = this.dataset.color;
+        if (hiddenColors.has(color)) {
+          hiddenColors.delete(color);
+          this.classList.remove('hidden');
+        } else {
+          hiddenColors.add(color);
+          this.classList.add('hidden');
+        }
+        applyVisibilityFilter();
+      });
+    });
+
+    function applyVisibilityFilter() {
+      if (!map.getSource('markers')) return;
+      
+      const filteredFeatures = allFeatures.filter(f => {
+        const color = f.properties.color;
+        return !hiddenColors.has(color);
+      });
+
+      const filteredGeoJSON = {
+        type: 'FeatureCollection',
+        features: filteredFeatures
+      };
+
+      map.getSource('markers').setData(filteredGeoJSON);
+    }
 
     function locateUser() {
       if (locationAttempted) return;
@@ -525,6 +605,7 @@
       clearMarkers();
 
       if (!data || data.length === 0) {
+        allFeatures = [];
         return;
       }
 
@@ -542,9 +623,13 @@
             description: item.desc || '',
             datetime: item.datetime || '',
             color: color,
+            lon: item.lon,
+            lat: item.lat,
           }
         };
       });
+
+      allFeatures = features;
 
       const geojson = {
         type: 'FeatureCollection',
@@ -576,6 +661,7 @@
         }
       });
 
+      applyVisibilityFilter();
       bindPopup();
     }
 
@@ -583,7 +669,6 @@
       const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
       if (lines.length === 0) return [];
 
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
       const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
       const result = [];
 
@@ -628,8 +713,7 @@
         });
       }
 
-      markersData = parsed;
-      renderMarkers(markersData);
+      renderMarkers(parsed);
     }
 
     const popup = new maplibregl.Popup({
@@ -646,17 +730,68 @@
       const description = props.description || '';
       const label = props.label || '';
       const datetime = props.datetime || '';
+      const lon = props.lon || 0;
+      const lat = props.lat || 0;
 
       let html = '';
       if (description) html += `<div class="popup-desc">${description}</div>`;
       if (label) html += `<div class="popup-label">${label}</div>`;
       if (datetime) html += `<div class="popup-datetime">Информация предоставлена: ${datetime}</div>`;
+      html += `<div class="popup-coords" data-lon="${lon}" data-lat="${lat}">
+        <span>📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+        <span class="copy-icon">📋</span>
+      </div>`;
       if (!html) html = '<div class="popup-label">Маркер</div>';
 
       popup
         .setLngLat(feature.geometry.coordinates)
         .setHTML(html)
         .addTo(map);
+
+      setTimeout(() => {
+        const coordsEl = document.querySelector('.popup-coords');
+        if (coordsEl) {
+          coordsEl.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const lon = this.dataset.lon;
+            const lat = this.dataset.lat;
+            const coordString = `${lat}, ${lon}`;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(coordString).then(() => {
+                this.classList.add('copied');
+                setTimeout(() => {
+                  this.classList.remove('copied');
+                }, 2000);
+              }).catch(() => {
+                fallbackCopy(coordString, this);
+              });
+            } else {
+              fallbackCopy(coordString, this);
+            }
+          });
+        }
+      }, 100);
+    }
+
+    function fallbackCopy(text, element) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        element.classList.add('copied');
+        setTimeout(() => {
+          element.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        console.error('Ошибка копирования:', err);
+      }
+      document.body.removeChild(textarea);
     }
 
     function bindPopup() {
@@ -697,7 +832,7 @@
         }
 
         loadMarkersFromCSV(csvText);
-        console.log(`CSV файл загружен из GitHub`);
+        console.log('CSV файл загружен из GitHub');
 
       } catch (err) {
         console.error('Ошибка загрузки из GitHub:', err);
